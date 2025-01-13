@@ -1,0 +1,73 @@
+name: Upstream Sync
+
+permissions:
+  contents: write
+  issues: write
+  actions: write
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+
+jobs:
+  sync_upstream:
+    name: Sync latest commits from Upstream
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync Upstream
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+        with:
+          upstream_sync_repo: flashbots/flashbots-docs
+          upstream_sync_branch: main
+          target_sync_branch: main
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
+          test_mode: false
+
+      - name: Get Latest Commit
+        id: get_commit
+        run: |
+          echo "commit_message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+          echo "commit_sha=$(git log -1 --pretty=format:'%H')" >> $GITHUB_OUTPUT
+
+      # - name: Sync Success
+      #   if: success()
+      #   uses: slackapi/slack-github-action@v2.0.0
+      #   with:
+      #     webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     webhook-type: webhook-trigger
+      #     payload: |
+      #       text: |
+      #         Sync successful for ${{ github.repository }}
+      #         Latest commit: **${{ steps.get_commit.outputs.commit_message }}**
+      #         Commit URL: https://github.com/flashbots/flashbots-docs/commit/${{ steps.get_commit.outputs.commit_sha }}
+      #         Please check the logs for more details.
+
+      - name: Sync Failed
+        if: failure()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            text: |
+              Sync failed for ${{ github.repository }}
+              Please check the logs for more details.
+
+      - name: Sync With new commits
+        if: steps.sync.outputs.has_new_commits == 'true'
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            text: |
+              Sync successful for ${{ github.repository }}
+              Latest commit: **${{ steps.get_commit.outputs.commit_message }}**
+              Commit URL: https://github.com/flashbots/flashbots-docs/commit/${{ steps.get_commit.outputs.commit_sha }}
+              Please check the logs for more details.
