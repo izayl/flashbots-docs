@@ -26,6 +26,7 @@ jobs:
           upstream_sync_repo: flashbots/flashbots-docs
           upstream_sync_branch: main
           target_sync_branch: main
+          git_config_pull_rebase: true
           target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
           test_mode: false
 
