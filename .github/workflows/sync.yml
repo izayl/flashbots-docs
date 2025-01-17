@@ -27,8 +27,9 @@ jobs:
           upstream_sync_branch: main
           target_sync_branch: main
           git_config_pull_rebase: true
-          target_repo_token: ${{ secrets.GITHUB_TOKEN }} # automatically generated, no need to set
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
           test_mode: false
+          target_branch_push_args: '--force'
 
       - name: Get Latest Commit
         id: get_commit
